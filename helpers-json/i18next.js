@@ -1,7 +1,7 @@
 // i18next v4 json format defined at https://www.i18next.com/misc/json-format
 const flat = require('flat');
 const { regex } = require('@l10nmonster/helpers');
-const { flattenAndSplitResources, ARB_ANNOTATION_MARKER } = require('./utils');
+const { flattenAndSplitResources, ARB_ANNOTATION_MARKER, FLATTEN_SEPARATOR } = require('./utils');
 
 const isArbAnnotations = e => e[0].split('.').slice(-2)[0].startsWith(ARB_ANNOTATION_MARKER);
 const validArbAnnotations = new Set(['description', 'type', 'context', 'placeholders', 'screenshot', 'video', 'source_text']);
@@ -34,6 +34,12 @@ function parseResourceAnnotations(resource, enableArbAnnotations) {
             parsedNotes[key] = notes.join("\n")
         } else {
             parsedNotes[key] = arbAnnotations
+            // If ARB annotation is not an object, treat it as if it is a resource too
+            // so that a linter implementation may catch it and warn developers about it
+            const keys = key.split(FLATTEN_SEPARATOR)
+            const fix = keys.pop()
+            const fixedKey = keys.concat(`${ARB_ANNOTATION_MARKER}${fix}`).join(FLATTEN_SEPARATOR)
+            res[fixedKey] = arbAnnotations
         }
     }
     return [ Object.entries(res), parsedNotes ];
